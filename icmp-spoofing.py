@@ -1,5 +1,5 @@
 #Setting ICMP spoofing for ARP poisoning
-#Ricky Hosfelt
+#RH - degausser
 #built for Python 2.7.5
 
 #importing modules
