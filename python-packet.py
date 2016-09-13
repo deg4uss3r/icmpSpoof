@@ -1,5 +1,5 @@
-#ARP detection or something
-#Ricky Hosfelt
+#ARP detection
+#RH - degausser
 #Written for python 2.7.5
 
 #Import socket to grab packets off the wire
